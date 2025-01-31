@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareCompass Hospital - Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+        }
+
+        .register-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .left-panel {
+            flex: 1;
+            background: linear-gradient(rgba(26, 115, 232, 0.9), rgba(13, 71, 161, 0.9)),
+                        url('https://images.unsplash.com/photo-1576765607922-40e54240ed15?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&h=800&q=80&w=1600');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 60px;
+        }
+
+        .welcome-text h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .welcome-text p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .logo {
+            width: 120px;
+            margin-bottom: 30px;
+        }
+
+        .register-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 40px;
+            color: #666;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 8px rgba(26, 115, 232, 0.2);
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #1557b0;
+        }
+
+        .links {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .links a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .links a:hover {
+            color: #1a73e8;
+        }
+
+        @media (max-width: 768px) {
+            .register-container {
+                flex-direction: column;
+                margin: 20px;
+            }
+
+            .left-panel {
+                padding: 30px;
+                text-align: center;
+            }
+
+            .right-panel {
+                padding: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="left-panel">
+            <img src="hospital-logo.png" alt="Hospital Logo" class="logo">
+            <div class="welcome-text">
+                <h1>Join CareCompass</h1>
+                <p>Register now to access personalized healthcare services tailored for you.</p>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <form class="register-form" action="register-action.php" method="POST">
+                <h2 style="margin-bottom: 35px; color: #333;">Create an Account</h2>
+                
+                <div class="form-group">
+                    <label>First Name</label>
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" name="first_name" placeholder="Enter your first name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" name="last_name" placeholder="Enter your last name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input type="email" name="email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <i class="fas fa-phone input-icon"></i>
+                    <input type="tel" name="phone" placeholder="Enter your phone number" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" name="confirm_password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit">Register</button>
+
+                <div class="links">
+                    <a href="login.php">Already have an account? Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

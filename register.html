@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareCompass Hospital - Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Reuse login page styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+        }
+
+        .login-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .left-panel {
+            flex: 1;
+            background: linear-gradient(rgba(26, 115, 232, 0.9), rgba(13, 71, 161, 0.9)),
+                        url('https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1932&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 60px;
+        }
+
+        .welcome-text h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .welcome-text p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .logo {
+            width: 120px;
+            margin-bottom: 30px;
+        }
+
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 40px;
+            color: #666;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 8px rgba(26, 115, 232, 0.2);
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #1557b0;
+        }
+
+        .links {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .links a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .links a:hover {
+            color: #1a73e8;
+        }
+
+        .separator {
+            margin: 25px 0;
+            text-align: center;
+            color: #666;
+            position: relative;
+        }
+
+        .separator::before,
+        .separator::after {
+            content: "";
+            display: inline-block;
+            width: 45%;
+            height: 1px;
+            background: #ddd;
+            vertical-align: middle;
+            margin: 0 10px;
+        }
+
+        /* Registration specific styles */
+        .name-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .terms {
+            margin: 20px 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .terms input {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .password-strength {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .strength-bar {
+            height: 4px;
+            flex: 1;
+            background: #ddd;
+            border-radius: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                margin: 20px;
+            }
+
+            .left-panel {
+                padding: 30px;
+                text-align: center;
+            }
+
+            .right-panel {
+                padding: 40px;
+            }
+
+            .name-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="left-panel">
+            <img src="hospital-logo.png" alt="Hospital Logo" class="logo">
+            <div class="welcome-text">
+                <h1>Join CareCompass</h1>
+                <p>Create your account to access personalized healthcare services and manage your medical records.</p>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <form class="login-form" action="register.php" method="POST">
+                <h2 style="margin-bottom: 35px; color: #333;">Patient Registration</h2>
+                
+                <div class="name-group">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" name="first_name" placeholder="John" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" name="last_name" placeholder="Doe" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Username</label>
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" name="username" placeholder="john12" required>
+                </div>
+
+
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input type="email" name="email" placeholder="john@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <i class="fas fa-phone input-icon"></i>
+                    <input type="tel" name="phone" placeholder="+1 234 567 890" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <i class="fas fa-calendar input-icon"></i>
+                    <input type="date" name="dob" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                    <div class="password-strength">
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                    </div>
+                </div>
+
+                <div class="terms">
+                    <input type="checkbox" id="terms" required>
+                    <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+                </div>
+
+                <button type="submit">Create Account</button>
+
+                <div class="links">
+                    <span>Already have an account? <a href="login.html">Login here</a></span>
+                </div>
+
+                <div class="separator">Or sign up with</div>
+
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button type="button" style="background: #dd4b39; width: auto; padding: 10px 25px;">
+                        <i class="fab fa-google"></i>
+                    </button>
+                    <button type="button" style="background: #3b5998; width: auto; padding: 10px 25px;">
+                        <i class="fab fa-facebook-f"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

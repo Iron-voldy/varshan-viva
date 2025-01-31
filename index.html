@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareCompass Hospital - Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f8fafc;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            width: 180px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #1e293b;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #1a73e8;
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            background: linear-gradient(rgba(26, 115, 232, 0.9), rgba(13, 71, 161, 0.9)),
+                        url('https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Services Section */
+        .services {
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            text-align: center;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .service-icon {
+            font-size: 2.5rem;
+            color: #1a73e8;
+            margin-bottom: 1rem;
+        }
+
+        /* Emergency Banner */
+        .emergency-banner {
+            background: #dc2626;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin: 4rem 0;
+        }
+
+        /* Doctors Section */
+        .doctors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            padding: 0 2rem;
+            max-width: 1200px;
+            margin: 4rem auto;
+        }
+
+        .doctor-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .doctor-image {
+            height: 300px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .doctor-info {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+   
+        /* Achievements Section */
+        .achievements {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            padding: 4rem 2rem;
+            background: #f1f5f9;
+            text-align: center;
+        }
+
+        .achievement-item {
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .achievement-item h3 {
+            color: #1a73e8;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            background: #1e293b;
+            color: white;
+            padding: 4rem 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+        }
+
+        .footer-section h4 {
+            color: #1a73e8;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #1a73e8;
+        }
+
+        .contact-info p {
+            margin-bottom: 1rem;
+            color: #94a3b8;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .social-links a {
+            color: white;
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        .social-links a:hover {
+            color: #1a73e8;
+        }
+
+        .copyright {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+        }
+
+        /* Responsive Enhancements */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <img src="hospital-logo.png" alt="CareCompass Logo" class="logo">
+            <div class="nav-links">
+                <a href="#services">Services</a>
+                <a href="#doctors">Doctors</a>
+                <a href="#about">About</a>
+                <a href="login.html" class="btn-outline">Login</a>
+                <a href="register.html" class="btn-primary">Register</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Compassionate Care, Advanced Medicine</h1>
+        <p>24/7 access to world-class healthcare services with a patient-first approach</p>
+        <div style="margin-top: 2rem;">
+            <a href="register.html" class="btn-primary" style="margin-right: 1rem;">Book Appointment</a>
+            <a href="#contact" class="btn-outline">Emergency Services</a>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="services" id="services">
+        <div class="section-title">
+            <h2>Our Specialized Services</h2>
+            <p>Comprehensive healthcare solutions for all your needs</p>
+        </div>
+        <div class="services-grid">
+            <div class="service-card">
+                <i class="fas fa-heartbeat service-icon"></i>
+                <h3>Cardiology</h3>
+                <p>Advanced heart care with cutting-edge diagnostic technology</p>
+            </div>
+            <div class="service-card">
+                <i class="fas fa-baby service-icon"></i>
+                <h3>Pediatrics</h3>
+                <p>Specialized care for children from birth through adolescence</p>
+            </div>
+            <!-- Add more service cards -->
+        </div>
+    </section>
+
+    <!-- Emergency Banner -->
+    <div class="emergency-banner">
+        <div class="content">
+            <h2><i class="fas fa-ambulance"></i> 24/7 Emergency Services</h2>
+            <p>Immediate care when you need it most: Call 123-456-7890</p>
+        </div>
+    </div>
+
+    <!-- Doctors Section -->
+    <section class="doctors" id="doctors">
+        <div class="section-title">
+            <h2>Meet Our Specialists</h2>
+            <p>Highly qualified medical professionals</p>
+        </div>
+        <div class="doctors-grid">
+            <div class="doctor-card">
+                <div class="doctor-image" style="background-image: url('https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')"></div>
+                <div class="doctor-info">
+                    <h4>Dr. Sarah Johnson</h4>
+                    <p>Cardiologist</p>
+                    <p>15+ years experience</p>
+                </div>
+            </div>
+            <!-- Add more doctor cards -->
+        </div>
+    </section>
+
+   
+        <!-- Achievements Section -->
+        <div class="achievements">
+            <div class="achievement-item">
+                <h3>50,000+</h3>
+                <p>Patients Treated</p>
+            </div>
+            <div class="achievement-item">
+                <h3>200+</h3>
+                <p>Medical Experts</p>
+            </div>
+            <div class="achievement-item">
+                <h3>24/7</h3>
+                <p>Emergency Services</p>
+            </div>
+            <div class="achievement-item">
+                <h3>98%</h3>
+                <p>Patient Satisfaction</p>
+            </div>
+        </div>
+    
+        <!-- Footer -->
+        <footer>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>About CareCompass</h4>
+                    <p>Your trusted partner in healthcare. Committed to providing exceptional medical services with compassion and cutting-edge technology.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#services">Our Services</a></li>
+                        <li><a href="#doctors">Find a Doctor</a></li>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="#careers">Careers</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <div class="contact-info">
+                        <p><i class="fas fa-map-marker-alt"></i> 123 Health Street, MedCity</p>
+                        <p><i class="fas fa-phone"></i> +1 (234) 567-8900</p>
+                        <p><i class="fas fa-envelope"></i> info@carecompass.com</p>
+                        <p><i class="fas fa-clock"></i> 24/7 Emergency Services</p>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>&copy; 2023 CareCompass Hospital. All rights reserved. | <a href="#privacy">Privacy Policy</a> | <a href="#terms">Terms of Service</a></p>
+            </div>
+        </footer>
+   
+    
+</body>
+</html>
