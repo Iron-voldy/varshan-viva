@@ -1,3 +1,65 @@
+<?php
+session_start();
+include 'connection.php';
+
+// Ensure user is logged in as a patient
+if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 3) {
+    header("Location: login.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+// Fetch Patient Details
+$patient_query = "SELECT first_name, last_name FROM Patients WHERE user_id = ?";
+$stmt = Database::$connection->prepare($patient_query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$patient_result = $stmt->get_result();
+
+$patient = $patient_result->fetch_assoc() ?? ['first_name' => 'Guest', 'last_name' => ''];
+
+// Fetch Upcoming Appointments
+$appointments_query = "SELECT COUNT(*) AS total FROM Appointments WHERE patient_id = (SELECT patient_id FROM Patients WHERE user_id = ?) AND appointment_date >= NOW()";
+$stmt = Database::$connection->prepare($appointments_query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$appointments_result = $stmt->get_result();
+$appointments = $appointments_result->fetch_assoc();
+
+// Fetch Pending Payments
+$payments_query = "SELECT SUM(amount) AS total FROM Payments WHERE user_id = ? AND payment_status = 'Pending'";
+$stmt = Database::$connection->prepare($payments_query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$payments_result = $stmt->get_result();
+$payments = $payments_result->fetch_assoc();
+
+// Fetch Active Prescriptions
+$prescriptions_query = "SELECT COUNT(*) AS total FROM Prescriptions WHERE record_id IN (SELECT record_id FROM MedicalRecords WHERE patient_id = (SELECT patient_id FROM Patients WHERE user_id = ?))";
+$stmt = Database::$connection->prepare($prescriptions_query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$prescriptions_result = $stmt->get_result();
+$prescriptions = $prescriptions_result->fetch_assoc();
+
+// Fetch Available Doctors
+$doctors_query = "SELECT d.first_name, d.last_name, d.hospital_branch, d.working_hours, s.specialty_name 
+                  FROM Doctors d JOIN Specialties s ON d.specialty_id = s.specialty_id WHERE d.working_hours IS NOT NULL";
+$doctors_result = Database::search($doctors_query);
+$doctors = $doctors_result->fetch_all(MYSQLI_ASSOC);
+
+// Fetch Emergency Contacts
+$emergency_query = "SELECT * FROM EmergencyContacts";
+$emergency_result = Database::search($emergency_query);
+$emergency_contacts = $emergency_result->fetch_all(MYSQLI_ASSOC);
+
+// Fetch Latest Health Updates (Using Feedbacks as News Data)
+$news_query = "SELECT feedback_text, submitted_at FROM Feedbacks ORDER BY submitted_at DESC LIMIT 3";
+$news_result = Database::search($news_query);
+$news_updates = $news_result->fetch_all(MYSQLI_ASSOC);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -306,7 +368,13 @@
             <!-- Welcome Banner -->
             <div class="welcome-banner">
                 <div class="welcome-text">
-                    <h1>Welcome Back, John!</h1>
+                <?php 
+                if (!$patient) {
+                    echo "<h1>Welcome Back, Guest!</h1>";
+                } else {
+                    echo "<h1>Welcome Back, " . htmlspecialchars($patient['first_name']) . "!</h1>";
+                }
+                ?>                
                     <p id="last-login">Last login: Today at 09:30 AM</p>
                 </div>
                 <button class="btn btn-primary">
@@ -322,7 +390,7 @@
                     </div>
                     <div>
                         <h3>Upcoming Appointments</h3>
-                        <p class="stat-number">2 Appointments</p>
+                        <p class="stat-number"><?= $appointments['total'] ?> Appointments</p>
                     </div>
                 </div>
                 <div class="quick-card">
@@ -331,7 +399,7 @@
                     </div>
                     <div>
                         <h3>Pending Payments</h3>
-                        <p class="stat-number">$150.00</p>
+                        <p class="stat-number">$<?= $payments['total'] ?: '0.00' ?></p>
                     </div>
                 </div>
                 <div class="quick-card">
@@ -340,7 +408,7 @@
                     </div>
                     <div>
                         <h3>Active Prescriptions</h3>
-                        <p class="stat-number">3 Medications</p>
+                        <p class="stat-number"><?= $prescriptions['total'] ?> Medications</p>
                     </div>
                 </div>
             </div>
@@ -349,26 +417,20 @@
             <h2 class="section-title">Available Specialists</h2>
             <div class="doctors-grid">
                 <!-- Doctor 1 -->
+                <div class="doctors-grid">
+                <?php foreach ($doctors as $doctor): ?>
                 <div class="doctor-card">
-                    <span class="availability-badge">Available Now</span>
                     <div class="doctor-header">
-                        <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=200" 
-                             class="doctor-image"
-                             alt="Dr. Sarah Johnson">
                         <div>
-                            <h3>Dr. Sarah Johnson</h3>
-                            <p>Cardiology Specialist</p>
+                            <h3>Dr. <?= htmlspecialchars($doctor['first_name']) ?> <?= htmlspecialchars($doctor['last_name']) ?></h3>
+                            <p><?= htmlspecialchars($doctor['specialty_name']) ?></p>
                         </div>
                     </div>
-                    <div class="doctor-details">
-                        <p><i class="fas fa-hospital text-muted"></i> Main Hospital Branch</p>
-                        <p><i class="fas fa-clock text-muted"></i> Mon-Fri: 9 AM - 5 PM</p>
-                        <button class="btn btn-primary mt-2">
-                            <i class="fas fa-calendar-check"></i> Book Appointment
-                        </button>
-                    </div>
+                    <p><i class="fas fa-hospital"></i> <?= htmlspecialchars($doctor['hospital_branch']) ?></p>
+                    <p><i class="fas fa-clock"></i> <?= htmlspecialchars($doctor['working_hours']) ?></p>
                 </div>
-
+                <?php endforeach; ?>
+            </div>
                 <!-- Add more doctor cards -->
             </div>
 
