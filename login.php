@@ -36,22 +36,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: doctor-dashboard.php'); // Doctor Dashboard
                 exit();
             } elseif ($user['role_id'] == 3) {
-                header('Location: patient-dashboard.html'); // Patient Dashboard
+                header('Location: patient-dashboard.php'); // Patient Dashboard
                 exit();
             } else {
-                echo "<script>alert('Invalid login credentials.'); window.location.href = 'admin-login.php';</script>";
+                echo "<script>alert('Invalid login credentials.'); window.location.href = 'login.html';</script>";
                 exit();
             }
         } else {
-            echo "<script>alert('Incorrect password. Try again.'); window.location.href = 'admin-login.php';</script>";
+            echo "<script>alert('Incorrect password. Try again.'); window.location.href = 'login.html';</script>";
             exit();
         }
     } else {
-        echo "<script>alert('User not found.'); window.location.href = 'admin-login.php';</script>";
+        echo "<script>alert('User not found.'); window.location.href = 'login.html';</script>";
         exit();
     }
 } else {
-    header('Location: admin-login.php'); // Redirect to login page if accessed directly
+    header('Location: login.html'); // Redirect to login page if accessed directly
     exit();
 }
 ?>

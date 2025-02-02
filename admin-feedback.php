@@ -176,23 +176,23 @@ $feedbacks = Database::search("
                     <i class="fas fa-user-md"></i>
                     <span>Manage Doctors</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./manage-patient.php" class="nav-item">
                     <i class="fas fa-user-injured"></i>
                     <span>Manage Patients</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./admin-appointment.php" class="nav-item">
                     <i class="fas fa-calendar-check"></i>
                     <span>Appointments</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./admin-payments.php" class="nav-item">
                     <i class="fas fa-credit-card"></i>
                     <span>Payments</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./feedback.php" class="nav-item">
                     <i class="fas fa-comments"></i>
                     <span>Feedback</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./4o4-error.html" class="nav-item">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>

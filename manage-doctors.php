@@ -10,7 +10,7 @@ $specialty_result = Database::search($specialty_query);
 $specialties = $specialty_result->fetch_all(MYSQLI_ASSOC);
 
 // Fetch Doctors from Database
-$query = "SELECT d.doctor_id, d.first_name, d.last_name, d.contact_number, d.hospital_branch, d.qualifications, d.working_hours, s.specialty_id, s.specialty_name, u.email, u.status 
+$query = "SELECT d.doctor_id, d.first_name, d.last_name, d.contact_number, d.hospital_branch, d.qualifications, d.working_hours, s.specialty_id, s.specialty_name, u.email, u.status, u.user_id 
           FROM Doctors d
           JOIN Specialties s ON d.specialty_id = s.specialty_id
           JOIN Users u ON d.user_id = u.user_id";
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_doctor'])) {
     $qualifications = mysqli_real_escape_string(Database::$connection, $_POST['qualifications']);
     $working_hours = mysqli_real_escape_string(Database::$connection, $_POST['working_hours']);
     
-    // Retrieve or create user
+    // Check if user already exists
     $user_query = "SELECT user_id FROM Users WHERE email = ? LIMIT 1";
     $stmt = Database::$connection->prepare($user_query);
     $stmt->bind_param("s", $email);
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_doctor'])) {
         $stmt = Database::$connection->prepare($insert_user);
         $stmt->bind_param("sssi", $first_name, $password, $email, $role_id);
         $stmt->execute();
-        $user_id = $stmt->insert_id;
+        $user_id = Database::$connection->insert_id;
     } else {
         $user = $user_result->fetch_assoc();
         $user_id = $user['user_id'];
@@ -242,23 +242,23 @@ if (isset($_GET['delete'])) {
                     <i class="fas fa-user-md"></i>
                     <span>Manage Doctors</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./manage-patient.php" class="nav-item">
                     <i class="fas fa-user-injured"></i>
                     <span>Manage Patients</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./admin-appointment.php" class="nav-item">
                     <i class="fas fa-calendar-check"></i>
                     <span>Appointments</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./admin-payments.php" class="nav-item">
                     <i class="fas fa-credit-card"></i>
                     <span>Payments</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./admin-feedback.php" class="nav-item">
                     <i class="fas fa-comments"></i>
                     <span>Feedback</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./4o4-error.html" class="nav-item">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
@@ -308,37 +308,85 @@ if (isset($_GET['delete'])) {
                 
                 <!-- Add/Edit Doctor Form -->
                 <h2 id="formTitle">Add New Doctor</h2>
-                <form method="POST" action="">
-                    <input type="hidden" id="doctor_id" name="doctor_id">
-                    <input type="text" id="first_name" name="first_name" placeholder="First Name" required>
-                    <input type="text" id="last_name" name="last_name" placeholder="Last Name" required>
-                    <select id="specialty_id" name="specialty_id" required>
-                        <?php foreach ($specialties as $spec): ?>
-                            <option value="<?= $spec['specialty_id'] ?>"><?= $spec['specialty_name'] ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <input type="text" id="hospital_branch" name="hospital_branch" placeholder="Hospital Branch" required>
-                    <input type="text" id="contact_number" name="contact_number" placeholder="Contact Number" required>
-                    <input type="text" id="qualifications" name="qualifications" placeholder="Qualifications" required>
-                    <input type="text" id="working_hours" name="working_hours" placeholder="Working Hours" required>
-                    <button type="submit" name="save_doctor" class="btn btn-primary">Save Doctor</button>
-                </form>
+                <form method="POST" action="" style="max-width: 500px; margin: 20px auto; padding: 20px; background: #ffffff; border-radius: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.1); font-family: Arial, sans-serif;">
+    <h2 id="formTitle" style="text-align: center; color: #2563eb; margin-bottom: 20px;">Add New Doctor</h2>
+    
+    <input type="hidden" id="doctor_id" name="doctor_id">
+    <input type="hidden" id="user_id" name="user_id">
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">First Name</label>
+    <input type="text" id="first_name" name="first_name" placeholder="First Name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Last Name</label>
+    <input type="text" id="last_name" name="last_name" placeholder="Last Name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Specialty</label>
+    <select id="specialty_id" name="specialty_id" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+        <?php foreach ($specialties as $spec): ?>
+            <option value="<?= $spec['specialty_id'] ?>"><?= $spec['specialty_name'] ?></option>
+        <?php endforeach; ?>
+    </select>
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Hospital Branch</label>
+    <input type="text" id="hospital_branch" name="hospital_branch" placeholder="Hospital Branch" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Contact Number</label>
+    <input type="text" id="contact_number" name="contact_number" placeholder="Contact Number" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Qualifications</label>
+    <input type="text" id="qualifications" name="qualifications" placeholder="Qualifications" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Working Hours</label>
+    <input type="text" id="working_hours" name="working_hours" placeholder="Working Hours" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+
+    <hr style="margin-top: 20px;">
+
+    <h3 style="text-align: center; color: #2563eb;">User Details</h3>
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Username</label>
+    <input type="text" id="username" name="username" placeholder="Username" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Email</label>
+    <input type="email" id="email" name="email" placeholder="Email Address" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Password</label>
+    <input type="password" id="password" name="password" placeholder="Set Password" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+
+    <label style="display: block; font-weight: bold; margin-top: 10px;">Status</label>
+    <select id="status" name="status" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px;">
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+    </select>
+
+    <button type="submit" name="save_doctor" class="btn btn-primary" style="width: 100%; background: #2563eb; color: white; padding: 12px; border: none; border-radius: 5px; font-size: 16px; margin-top: 15px; cursor: pointer;">
+        Save Doctor
+    </button>
+</form>
+
             </div>
         </main>
     </div>
 
     <script>
-        function editDoctor(id, firstName, lastName, specialty, branch, contact, qualifications, workingHours) {
-            document.getElementById('doctor_id').value = id;
-            document.getElementById('first_name').value = firstName;
-            document.getElementById('last_name').value = lastName;
-            document.getElementById('specialty_id').value = specialty;
-            document.getElementById('hospital_branch').value = branch;
-            document.getElementById('contact_number').value = contact;
-            document.getElementById('qualifications').value = qualifications;
-            document.getElementById('working_hours').value = workingHours;
-            document.getElementById('formTitle').innerText = 'Edit Doctor';
-        }
+       function editDoctor(id, userId, firstName, lastName, specialty, branch, contact, qualifications, workingHours, username, email, status) {
+    document.getElementById('doctor_id').value = id;
+    document.getElementById('user_id').value = userId;
+    document.getElementById('first_name').value = firstName;
+    document.getElementById('last_name').value = lastName;
+    document.getElementById('specialty_id').value = specialty;
+    document.getElementById('hospital_branch').value = branch;
+    document.getElementById('contact_number').value = contact;
+    document.getElementById('qualifications').value = qualifications;
+    document.getElementById('working_hours').value = workingHours;
+
+    // Fill user data fields
+    document.getElementById('username').value = username;
+    document.getElementById('email').value = email;
+    document.getElementById('status').value = status;
+
+    document.getElementById('formTitle').innerText = 'Edit Doctor';
+}
+
     </script>
 </body>
 </html>

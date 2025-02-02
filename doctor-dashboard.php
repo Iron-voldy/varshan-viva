@@ -7,7 +7,7 @@ Database::setUpConnection();
 
 // Check if user is logged in and is a doctor
 if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 2) { // Assuming role_id 2 is for doctors
-    header("Location: login.php");
+    header("Location: login.html");
     exit();
 }
 

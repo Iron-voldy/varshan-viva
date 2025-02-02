@@ -126,7 +126,7 @@ $payments = Database::search("
                     <i class="fas fa-user-injured"></i>
                     <span>Manage Patients</span>
                 </a>
-                <a href="./admin-appoinment.php" class="nav-item">
+                <a href="./admin-appointment.php" class="nav-item">
                     <i class="fas fa-calendar-check"></i>
                     <span>Appointments</span>
                 </a>
@@ -134,7 +134,7 @@ $payments = Database::search("
                     <i class="fas fa-credit-card"></i>
                     <span>Payments</span>
                 </a>
-                <a href="./admin-feedback.php" class="nav-item">
+                <a href="./feedback.php" class="nav-item">
                     <i class="fas fa-comments"></i>
                     <span>Feedback</span>
                 </a>
