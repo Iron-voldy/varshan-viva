@@ -1,3 +1,41 @@
+<?php
+session_start();
+include 'connection.php';
+
+// Ensure only admin has access
+if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 1) {
+    header("Location: login.php");
+    exit();
+}
+
+// Get total counts for dashboard stats
+$stats_query = "
+    SELECT 
+        (SELECT COUNT(*) FROM Patients) AS total_patients,
+        (SELECT COUNT(*) FROM Doctors) AS total_doctors,
+        (SELECT COUNT(*) FROM Appointments WHERE DATE(appointment_date) = CURDATE()) AS todays_appointments,
+        (SELECT COUNT(*) FROM Payments WHERE payment_status = 'Pending') AS pending_payments
+";
+$stats_result = Database::search($stats_query);
+$stats = $stats_result->fetch_assoc();
+
+// Fetch recent doctors
+$doctors_query = "
+    SELECT d.first_name, d.last_name, s.specialty_name, d.hospital_branch
+    FROM Doctors d
+    JOIN Specialties s ON d.specialty_id = s.specialty_id
+    ORDER BY d.doctor_id DESC LIMIT 5";
+$doctors_result = Database::search($doctors_query);
+
+// Fetch recent patients
+$patients_query = "
+    SELECT p.first_name, p.last_name, p.date_of_birth, p.gender, 
+    (SELECT MAX(visit_date) FROM MedicalRecords WHERE patient_id = p.patient_id) AS last_visit
+    FROM Patients p ORDER BY p.patient_id DESC LIMIT 5";
+$patients_result = Database::search($patients_query);
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -182,11 +220,11 @@
                 <h3>Admin Dashboard</h3>
             </div>
             <nav>
-                <a href="#" class="nav-item active">
+                <a href="./admin-dashboard.php" class="nav-item active">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./manage-doctors.php" class="nav-item">
                     <i class="fas fa-user-md"></i>
                     <span>Manage Doctors</span>
                 </a>
@@ -213,64 +251,47 @@
             </nav>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
+         <!-- Main Content -->
+         <main class="main-content">
             <!-- Quick Stats -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3>Total Patients</h3>
-                    <p class="stat-number">1,245</p>
+                    <p class="stat-number"><?= $stats['total_patients'] ?></p>
                 </div>
                 <div class="stat-card">
                     <h3>Active Doctors</h3>
-                    <p class="stat-number">45</p>
+                    <p class="stat-number"><?= $stats['total_doctors'] ?></p>
                 </div>
                 <div class="stat-card">
                     <h3>Today's Appointments</h3>
-                    <p class="stat-number">89</p>
+                    <p class="stat-number"><?= $stats['todays_appointments'] ?></p>
                 </div>
                 <div class="stat-card">
                     <h3>Pending Payments</h3>
-                    <p class="stat-number">23</p>
+                    <p class="stat-number"><?= $stats['pending_payments'] ?></p>
                 </div>
             </div>
 
             <!-- Doctors Table -->
             <div class="data-table">
-                <div class="table-header">
-                    <h3>Recent Doctors</h3>
-                    <button class="btn btn-primary" onclick="openDoctorModal()">
-                        <i class="fas fa-plus"></i> Add Doctor
-                    </button>
-                </div>
+                <h3>Recent Doctors</h3>
                 <table>
                     <thead>
                         <tr>
                             <th>Name</th>
                             <th>Specialty</th>
                             <th>Hospital Branch</th>
-                            <th>Status</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td data-label="Name">Dr. Sarah Johnson</td>
-                            <td data-label="Specialty">Cardiology</td>
-                            <td data-label="Branch">City General</td>
-                            <td data-label="Status"><span class="status-active">Active</span></td>
-                            <td data-label="Actions">
-                                <div class="action-btns">
-                                    <button class="btn btn-icon edit-btn">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-icon danger-btn">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- More rows -->
+                        <?php while ($doctor = $doctors_result->fetch_assoc()): ?>
+                            <tr>
+                                <td><?= $doctor['first_name'] . " " . $doctor['last_name'] ?></td>
+                                <td><?= $doctor['specialty_name'] ?></td>
+                                <td><?= $doctor['hospital_branch'] ?></td>
+                            </tr>
+                        <?php endwhile; ?>
                     </tbody>
                 </table>
             </div>
@@ -285,74 +306,19 @@
                             <th>Age</th>
                             <th>Gender</th>
                             <th>Last Visit</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td data-label="Name">John Doe</td>
-                            <td data-label="Age">35</td>
-                            <td data-label="Gender">Male</td>
-                            <td data-label="Last Visit">2023-11-05</td>
-                            <td data-label="Actions">
-                                <button class="btn btn-icon view-btn">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <!-- More rows -->
+                        <?php while ($patient = $patients_result->fetch_assoc()): ?>
+                            <tr>
+                                <td><?= $patient['first_name'] . " " . $patient['last_name'] ?></td>
+                                <td><?= date("Y") - date("Y", strtotime($patient['date_of_birth'])) ?></td>
+                                <td><?= $patient['gender'] ?></td>
+                                <td><?= $patient['last_visit'] ?? 'N/A' ?></td>
+                            </tr>
+                        <?php endwhile; ?>
                     </tbody>
                 </table>
-            </div>
-
-            <!-- Add Doctor Modal -->
-            <div class="modal" id="doctorModal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2>Add New Doctor</h2>
-                        <button class="btn btn-icon" onclick="closeDoctorModal()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <form class="form-grid">
-                        <div class="form-group">
-                            <label>First Name</label>
-                            <input type="text" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Last Name</label>
-                            <input type="text" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Specialty</label>
-                            <select required>
-                                <option>Cardiology</option>
-                                <option>Pediatrics</option>
-                                <!-- More options -->
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Hospital Branch</label>
-                            <input type="text" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Contact Number</label>
-                            <input type="tel" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" required>
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" onclick="closeDoctorModal()">
-                                Cancel
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                Save Doctor
-                            </button>
-                        </div>
-                    </form>
-                </div>
             </div>
         </main>
     </div>
