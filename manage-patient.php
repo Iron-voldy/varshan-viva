@@ -199,7 +199,7 @@ while ($row = $result->fetch_assoc()) {
                     <i class="fas fa-user-md"></i>
                     <span>Manage Doctors</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./manage-patient.php" class="nav-item">
                     <i class="fas fa-user-injured"></i>
                     <span>Manage Patients</span>
                 </a>
@@ -211,11 +211,11 @@ while ($row = $result->fetch_assoc()) {
                     <i class="fas fa-credit-card"></i>
                     <span>Payments</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./admin-feedback.php" class="nav-item">
                     <i class="fas fa-comments"></i>
                     <span>Feedback</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./4o4-error.html" class="nav-item">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
