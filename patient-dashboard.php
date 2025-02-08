@@ -377,7 +377,7 @@ $news_updates = $news_result->fetch_all(MYSQLI_ASSOC);
                 ?>                
                     <p id="last-login">Last login: Today at 09:30 AM</p>
                 </div>
-                <button class="btn btn-primary">
+                <button class="btn btn-primary" onclick="window.location.href='patient-appointment.php'">
                     <i class="fas fa-plus"></i> New Appointment
                 </button>
             </div>
