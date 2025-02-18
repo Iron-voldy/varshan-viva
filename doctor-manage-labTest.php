@@ -169,6 +169,7 @@ $lab_tests = $lab_tests_result->fetch_all(MYSQLI_ASSOC);
                 <span>Profile Settings</span>
             </a>
         </nav>
+
     </aside>
 
     <div class="container">

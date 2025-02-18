@@ -346,27 +346,32 @@ textarea {
             </div>
             
             <nav>
-                <a href="#" class="nav-item active">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="./doctor-appoinment.php" class="nav-item">
-                    <i class="fas fa-calendar-check"></i>
-                    <span>Appointments</span>
-                </a>
-                <a href="./doct" class="nav-item">
-                    <i class="fas fa-user-injured"></i>
-                    <span>Patients</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-file-medical"></i>
-                    <span>Medical Records</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-user-edit"></i>
-                    <span>Profile Settings</span>
-                </a>
-            </nav>
+            <a href="#" class="nav-item active">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="./doctor-appoinment.php" class="nav-item">
+                <i class="fas fa-calendar-check"></i>
+                <span>Appointments</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-user-injured"></i>
+                <span>Patients</span>
+            </a>
+            <a href="doctor-manage-labTest.php" class="nav-item">
+                <i class="fas fa-flask"></i>
+                <span>Lab Tests</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-file-medical"></i>
+                <span>Medical Records</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-user-edit"></i>
+                <span>Profile Settings</span>
+            </a>
+        </nav>
+
         </aside>
 
          <!-- Main Profile Section -->
