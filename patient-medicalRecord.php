@@ -281,11 +281,12 @@ while ($row = $lab_tests_result->fetch_assoc()) {
                     <i class="fas fa-credit-card"></i>
                     <span>Payments</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./patient-profile.php" class="nav-item">
                     <i class="fas fa-user-edit"></i>
                     <span>Profile Settings</span>
                 </a>
             </nav>
+
         </aside>
 
          <!-- Main Content -->

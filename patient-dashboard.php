@@ -340,27 +340,28 @@ $news_updates = $news_result->fetch_all(MYSQLI_ASSOC);
             </div>
             
             <nav>
-                <a href="#" class="nav-item">
+                <a href="./patient-dashboard.html" class="nav-item">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./patient-appointment.php" class="nav-item">
                     <i class="fas fa-calendar-check"></i>
                     <span>Appointments</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./patient-medicalRecord.php" class="nav-item">
                     <i class="fas fa-file-medical"></i>
                     <span>Medical Records</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./patient-payment.php" class="nav-item">
                     <i class="fas fa-credit-card"></i>
                     <span>Payments</span>
                 </a>
-                <a href="patient-profile.php" class="nav-item">
+                <a href="./patient-profile.php" class="nav-item">
                     <i class="fas fa-user-edit"></i>
                     <span>Profile Settings</span>
                 </a>
             </nav>
+
         </aside>
 
         <!-- Main Content -->

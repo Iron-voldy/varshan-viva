@@ -1,3 +1,107 @@
+<?php
+session_start();
+include 'connection.php';
+require_once('./vendor/stripe/stripe-php/init.php'); // Include Stripe PHP SDK
+
+// Stripe API keys
+\Stripe\Stripe::setApiKey('sk_test_51OPJDzBo3hvX4AIQGNRRUtUjlR0fQJ8eC2YF4pl9qJ6CGdpdjExDqQER6hthd3QxqD1amzk1yEBRWSqgpOu4BoUd00gkEydCyo'); // Replace with your actual Stripe secret key
+
+// Ensure the patient is logged in
+if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 3) {
+    echo json_encode(['error' => 'Unauthorized access.']);
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+// Fetch patient details
+$patient_query = "SELECT p.first_name, p.last_name FROM Patients p WHERE p.user_id = ?";
+$stmt = Database::$connection->prepare($patient_query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$patient_result = $stmt->get_result();
+$patient = $patient_result->fetch_assoc();
+
+if (!$patient) {
+    echo json_encode(['error' => 'Patient record not found.']);
+    exit();
+}
+
+$first_name = $patient['first_name'];
+$last_name = $patient['last_name'];
+
+// Initialize variables for pending and completed payments as empty arrays
+$pending_payments = [];
+$completed_payments = [];
+
+// Fetch all pending payments
+$payments_query = "SELECT p.payment_id, p.amount, p.payment_status, p.payment_method, a.appointment_date, s.service_name 
+                   FROM Payments p 
+                   JOIN Appointments a ON p.appointment_id = a.appointment_id
+                   LEFT JOIN Services s ON a.appointment_reason = s.service_name
+                   WHERE p.user_id = ? AND p.payment_status = 'Pending'";
+$stmt = Database::$connection->prepare($payments_query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$payments_result = $stmt->get_result();
+
+// Check if there are pending payments and assign the result
+if ($payments_result->num_rows > 0) {
+    $pending_payments = $payments_result->fetch_all(MYSQLI_ASSOC);
+}
+
+// Fetch completed payments (if any)
+$completed_payments_query = "SELECT p.payment_id, p.amount, p.payment_status, p.payment_method, a.appointment_date, s.service_name 
+                             FROM Payments p 
+                             JOIN Appointments a ON p.appointment_id = a.appointment_id
+                             LEFT JOIN Services s ON a.appointment_reason = s.service_name
+                             WHERE p.user_id = ? AND p.payment_status = 'Completed'";
+$stmt = Database::$connection->prepare($completed_payments_query);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$completed_payments_result = $stmt->get_result();
+
+// Check if there are completed payments and assign the result
+if ($completed_payments_result->num_rows > 0) {
+    $completed_payments = $completed_payments_result->fetch_all(MYSQLI_ASSOC);
+}
+
+// Handle Stripe payment submission
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $amount = $_POST['amount'] * 100; // Convert to cents (Stripe expects amount in cents)
+    $payment_method_id = $_POST['payment_method_id']; // This will be the token ID sent from the frontend
+    $appointment_id = $_POST['appointment_id']; // Appointment ID passed from frontend
+
+    try {
+        // Create the payment intent using Stripe's API
+        $paymentIntent = \Stripe\PaymentIntent::create([
+            'amount' => $amount,
+            'currency' => 'usd',
+            'payment_method' => $payment_method_id, // Use the payment method (token) received from frontend
+            'confirmation_method' => 'manual',
+            'confirm' => true,
+        ]);
+
+        // Handle successful payment
+        if ($paymentIntent->status === 'succeeded') {
+            // Save the payment record in the database
+            $payment_insert_query = "INSERT INTO Payments (user_id, amount, payment_method, payment_status, appointment_id) 
+                                     VALUES (?, ?, ?, 'Completed', ?)";
+            $stmt = Database::$connection->prepare($payment_insert_query);
+            $stmt->bind_param("idssi", $user_id, $amount, 'Credit Card', $appointment_id); // Assuming appointment_id is passed
+            $stmt->execute();
+
+            echo json_encode(['message' => 'Payment processed successfully!']);
+        } else {
+            echo json_encode(['error' => 'Payment failed.']);
+        }
+    } catch (\Stripe\Exception\CardException $e) {
+        echo json_encode(['error' => 'Error: ' . $e->getError()->message]);
+    }
+}
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +110,117 @@
     <title>Patient Dashboard - CareCompass</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+            gap: 2rem;
+        }
+
+        .payment-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .card-input {
+            position: relative;
+        }
+
+        .card-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+
+        .payment-methods {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .method-card {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .method-card.active {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
         :root {
             --primary: #2563eb;
             --secondary: #3b82f6;
@@ -82,144 +297,6 @@
 
         }
 
-         /* ======= Main Content ======= */
-         .main-content {
-            padding: 2rem 2rem 4rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* Payments List */
-        .payments-list {
-            margin-bottom: 3rem;
-        }
-
-        .payment-card {
-            background: white;
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .payment-status {
-            padding: 0.3rem 1rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-        }
-
-        .status-pending { background: #fef3c7; color: #854d0e; }
-        .status-paid { background: #dcfce7; color: #166534; }
-
-        /* Payment Form */
-        .payment-form {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--dark);
-            font-weight: 500;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-
-        input:focus, select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-            outline: none;
-        }
-
-        .card-input {
-            position: relative;
-        }
-
-        .card-icon {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #64748b;
-        }
-
-        .payment-methods {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .method-card {
-            flex: 1;
-            padding: 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .method-card.active {
-            border-color: var(--primary);
-            background: #eff6ff;
-        }
-
-        .btn {
-            padding: 0.8rem 2rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 500;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #1d4ed8;
-        }
-
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .dashboard-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .payment-card {
-                flex-direction: column;
-                align-items: start;
-                gap: 1rem;
-            }
-        }
         
     </style>
 </head>
@@ -245,117 +322,128 @@
                     <i class="fas fa-file-medical"></i>
                     <span>Medical Records</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./patient-payment.php" class="nav-item">
                     <i class="fas fa-credit-card"></i>
                     <span>Payments</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./patient-profile.php" class="nav-item">
                     <i class="fas fa-user-edit"></i>
                     <span>Profile Settings</span>
                 </a>
             </nav>
         </aside>
 
-          <!-- Main Content -->
+        <!-- Main Content -->
         <main class="main-content">
             <!-- Pending Payments -->
             <div class="payments-list">
                 <h2 class="section-title">Pending Payments</h2>
-                
-                <!-- Payment Card 1 -->
-                <div class="payment-card">
-                    <div>
-                        <h3>Appointment with Dr. Sarah Johnson</h3>
-                        <p><i class="fas fa-calendar-alt"></i> October 25, 2023</p>
-                        <p><i class="fas fa-clock"></i> 10:00 AM - 10:30 AM</p>
+                <?php foreach ($pending_payments as $payment): ?>
+                    <div class="payment-card">
+                        <div>
+                            <h3>Appointment with Dr. <?= htmlspecialchars($payment['first_name']) ?> <?= htmlspecialchars($payment['last_name']) ?></h3>
+                            <p><i class="fas fa-calendar-alt"></i> <?= htmlspecialchars($payment['appointment_date']) ?></p>
+                            <p><i class="fas fa-clock"></i> <?= htmlspecialchars($payment['service_name']) ?></p>
+                        </div>
+                        <div class="payment-details">
+                            <p class="amount"><?= htmlspecialchars($payment['amount']) ?></p>
+                            <span class="payment-status status-pending">Pending</span>
+                            <p class="due-date">Due: <?= date("Y-m-d", strtotime($payment['due_date'])) ?></p>
+                        </div>
                     </div>
-                    <div class="payment-details">
-                        <p class="amount">$150.00</p>
-                        <span class="payment-status status-pending">Pending</span>
-                        <p class="due-date">Due: November 1, 2023</p>
-                    </div>
-                </div>
-
-                <!-- Payment Card 2 -->
-                <div class="payment-card">
-                    <div>
-                        <h3>Lab Test - Complete Blood Count</h3>
-                        <p><i class="fas fa-flask"></i> October 20, 2023</p>
-                    </div>
-                    <div class="payment-details">
-                        <p class="amount">$75.50</p>
-                        <span class="payment-status status-pending">Pending</span>
-                        <p class="due-date">Due: October 30, 2023</p>
-                    </div>
-                </div>
+                <?php endforeach; ?>
             </div>
 
             <!-- Payment Form -->
             <div class="payment-form">
                 <h2 class="section-title">Make a Payment</h2>
-                <form>
-                    <div class="payment-methods">
-                        <div class="method-card active">
-                            <i class="fab fa-cc-visa fa-2x"></i>
-                            <p>Credit/Debit Card</p>
-                        </div>
-                        <div class="method-card">
-                            <i class="fab fa-paypal fa-2x"></i>
-                            <p>PayPal</p>
-                        </div>
+                <form id="payment-form" method="POST">
+                    <div class="form-group">
+                        <label>Amount to Pay</label>
+                        <input type="number" name="amount" value="150.00" required>
                     </div>
 
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Card Number</label>
-                            <div class="card-input">
-                                <input type="text" placeholder="4242 4242 4242 4242" required>
-                                <i class="fas fa-credit-card card-icon"></i>
-                            </div>
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        <div id="card-element">
+                            <!-- A Stripe Element will be inserted here. -->
                         </div>
-
-                        <div class="form-group">
-                            <label>Expiration Date</label>
-                            <input type="month" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>CVC</label>
-                            <div class="card-input">
-                                <input type="text" placeholder="123" required>
-                                <i class="fas fa-lock card-icon"></i>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Amount to Pay</label>
-                            <input type="number" value="150.00" required>
-                        </div>
+                        <!-- Used to display form errors. -->
+                        <div id="card-errors" role="alert"></div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-lock"></i> Pay Now
-                    </button>
+                    <input type="hidden" name="appointment_id" value="12345"> <!-- Example appointment ID, replace dynamically -->
+                    <button type="submit" id="submit" class="btn btn-primary">Pay Now</button>
                 </form>
             </div>
 
-            <!-- Payment History -->
-            <div class="payment-history">
-                <h2 class="section-title">Payment History</h2>
-                <div class="payment-card status-paid">
-                    <div>
-                        <h3>Appointment with Dr. Michael Chen</h3>
-                        <p><i class="fas fa-calendar-alt"></i> September 15, 2023</p>
+            <!-- Completed Payments -->
+            <div class="payments-list">
+                <h2 class="section-title">Completed Payments</h2>
+                <?php foreach ($completed_payments as $payment): ?>
+                    <div class="payment-card">
+                        <div>
+                            <h3>Appointment with Dr. <?= htmlspecialchars($payment['first_name']) ?> <?= htmlspecialchars($payment['last_name']) ?></h3>
+                            <p><i class="fas fa-calendar-alt"></i> <?= htmlspecialchars($payment['appointment_date']) ?></p>
+                            <p><i class="fas fa-clock"></i> <?= htmlspecialchars($payment['service_name']) ?></p>
+                        </div>
+                        <div class="payment-details">
+                            <p class="amount"><?= htmlspecialchars($payment['amount']) ?></p>
+                            <span class="payment-status status-paid">Paid</span>
+                            <p class="paid-date">Paid: <?= date("Y-m-d", strtotime($payment['paid_date'])) ?></p>
+                        </div>
                     </div>
-                    <div class="payment-details">
-                        <p class="amount">$120.00</p>
-                        <span class="payment-status status-paid">Paid</span>
-                        <p class="paid-date">Paid: September 15, 2023</p>
-                    </div>
-                </div>
+                <?php endforeach; ?>
             </div>
         </main>
-       
     </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+<script>
+    var stripe = Stripe('pk_test_51OPJDzBo3hvX4AIQc7qVZ6w2Zb2aduI0C2UfSRFW7n2NMhQ42P7tj7xhA3TfIcQNKL8z4AnCc03SWHAxdww8PqWh00V3haSh5i'); // Replace with your public key
+    var elements = stripe.elements();
+    
+    // Create an instance of the card Element
+    var card = elements.create('card');
+    card.mount('#card-element'); // This mounts the card input field
+
+    // Handle form submission
+    var form = document.getElementById('payment-form');
+    form.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        // Create a token using the card Element
+        const {token, error} = await stripe.createToken(card);
+
+        if (error) {
+            // Display any error that occurs during token creation
+            document.getElementById('card-errors').textContent = error.message;
+        } else {
+            // If no error, send the token to the backend for further processing
+            var formData = new FormData(form);
+            formData.append("payment_method_id", token.id);
+
+            // Send the token to the backend
+            fetch('patient-payment.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error); // Display the error from the backend if any
+                } else {
+                    alert(data.message); // Display the success message received from backend
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Payment failed. Please try again later.');
+            });
+        }
+    });
+</script>
+
+
 </body>
 </html>
