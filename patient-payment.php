@@ -1,12 +1,14 @@
 <?php
 session_start();
 include 'connection.php';
-require_once('./vendor/stripe/stripe-php/init.php'); // Include Stripe PHP SDK
 
-// Stripe API keys
-\Stripe\Stripe::setApiKey('sk_test_51OPJDzBo3hvX4AIQGNRRUtUjlR0fQJ8eC2YF4pl9qJ6CGdpdjExDqQER6hthd3QxqD1amzk1yEBRWSqgpOu4BoUd00gkEydCyo'); // Replace with your actual Stripe secret key
 
-// Ensure the patient is logged in
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/php_error.log'); 
+
+
 if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 3) {
     echo json_encode(['error' => 'Unauthorized access.']);
     exit();
@@ -14,93 +16,40 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 3) {
 
 $user_id = $_SESSION['user_id'];
 
-// Fetch patient details
-$patient_query = "SELECT p.first_name, p.last_name FROM Patients p WHERE p.user_id = ?";
-$stmt = Database::$connection->prepare($patient_query);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$patient_result = $stmt->get_result();
-$patient = $patient_result->fetch_assoc();
 
-if (!$patient) {
-    echo json_encode(['error' => 'Patient record not found.']);
-    exit();
-}
-
-$first_name = $patient['first_name'];
-$last_name = $patient['last_name'];
-
-// Initialize variables for pending and completed payments as empty arrays
 $pending_payments = [];
 $completed_payments = [];
 
-// Fetch all pending payments
-$payments_query = "SELECT p.payment_id, p.amount, p.payment_status, p.payment_method, a.appointment_date, s.service_name 
-                   FROM Payments p 
-                   JOIN Appointments a ON p.appointment_id = a.appointment_id
-                   LEFT JOIN Services s ON a.appointment_reason = s.service_name
-                   WHERE p.user_id = ? AND p.payment_status = 'Pending'";
-$stmt = Database::$connection->prepare($payments_query);
+
+$pending_query = "SELECT p.payment_id, p.amount, p.payment_status, p.payment_method, a.appointment_date, s.service_name
+                  FROM Payments p
+                  JOIN Appointments a ON p.appointment_id = a.appointment_id
+                  LEFT JOIN Services s ON a.appointment_reason = s.service_name
+                  WHERE p.user_id = ? AND p.payment_status = 'Pending'";
+
+$stmt = Database::$connection->prepare($pending_query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
-$payments_result = $stmt->get_result();
-
-// Check if there are pending payments and assign the result
-if ($payments_result->num_rows > 0) {
-    $pending_payments = $payments_result->fetch_all(MYSQLI_ASSOC);
+$pending_result = $stmt->get_result();
+if ($pending_result->num_rows > 0) {
+    $pending_payments = $pending_result->fetch_all(MYSQLI_ASSOC);
 }
 
-// Fetch completed payments (if any)
-$completed_payments_query = "SELECT p.payment_id, p.amount, p.payment_status, p.payment_method, a.appointment_date, s.service_name 
-                             FROM Payments p 
-                             JOIN Appointments a ON p.appointment_id = a.appointment_id
-                             LEFT JOIN Services s ON a.appointment_reason = s.service_name
-                             WHERE p.user_id = ? AND p.payment_status = 'Completed'";
-$stmt = Database::$connection->prepare($completed_payments_query);
+
+$completed_query = "SELECT p.payment_id, p.amount, p.payment_status, p.payment_method, a.appointment_date, s.service_name
+                    FROM Payments p
+                    JOIN Appointments a ON p.appointment_id = a.appointment_id
+                    LEFT JOIN Services s ON a.appointment_reason = s.service_name
+                    WHERE p.user_id = ? AND p.payment_status = 'Completed'";
+
+$stmt = Database::$connection->prepare($completed_query);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
-$completed_payments_result = $stmt->get_result();
-
-// Check if there are completed payments and assign the result
-if ($completed_payments_result->num_rows > 0) {
-    $completed_payments = $completed_payments_result->fetch_all(MYSQLI_ASSOC);
-}
-
-// Handle Stripe payment submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $amount = $_POST['amount'] * 100; // Convert to cents (Stripe expects amount in cents)
-    $payment_method_id = $_POST['payment_method_id']; // This will be the token ID sent from the frontend
-    $appointment_id = $_POST['appointment_id']; // Appointment ID passed from frontend
-
-    try {
-        // Create the payment intent using Stripe's API
-        $paymentIntent = \Stripe\PaymentIntent::create([
-            'amount' => $amount,
-            'currency' => 'usd',
-            'payment_method' => $payment_method_id, // Use the payment method (token) received from frontend
-            'confirmation_method' => 'manual',
-            'confirm' => true,
-        ]);
-
-        // Handle successful payment
-        if ($paymentIntent->status === 'succeeded') {
-            // Save the payment record in the database
-            $payment_insert_query = "INSERT INTO Payments (user_id, amount, payment_method, payment_status, appointment_id) 
-                                     VALUES (?, ?, ?, 'Completed', ?)";
-            $stmt = Database::$connection->prepare($payment_insert_query);
-            $stmt->bind_param("idssi", $user_id, $amount, 'Credit Card', $appointment_id); // Assuming appointment_id is passed
-            $stmt->execute();
-
-            echo json_encode(['message' => 'Payment processed successfully!']);
-        } else {
-            echo json_encode(['error' => 'Payment failed.']);
-        }
-    } catch (\Stripe\Exception\CardException $e) {
-        echo json_encode(['error' => 'Error: ' . $e->getError()->message]);
-    }
+$completed_result = $stmt->get_result();
+if ($completed_result->num_rows > 0) {
+    $completed_payments = $completed_result->fetch_all(MYSQLI_ASSOC);
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -109,6 +58,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Dashboard - CareCompass</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://www.payhere.lk https://sandbox.payhere.lk;
+        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+        img-src 'self' data:;
+        font-src 'self' https://cdnjs.cloudflare.com;
+        connect-src 'self' https://sandbox.payhere.lk;
+        frame-src https://www.payhere.lk https://sandbox.payhere.lk;
+    ">
     <style>
         :root {
             --primary: #2563eb;
@@ -144,13 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
         .form-group {
             margin-bottom: 1.5rem;
         }
@@ -162,45 +113,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-weight: 500;
         }
 
-        input, select {
+        input {
             width: 100%;
             padding: 0.8rem 1rem;
             border: 2px solid #e2e8f0;
             border-radius: 8px;
             font-size: 1rem;
             transition: all 0.3s;
-        }
-
-        .card-input {
-            position: relative;
-        }
-
-        .card-icon {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #64748b;
-        }
-
-        .payment-methods {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .method-card {
-            flex: 1;
-            padding: 1rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .method-card.active {
-            border-color: var(--primary);
-            background: #eff6ff;
         }
 
         .btn {
@@ -221,34 +140,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background: #1d4ed8;
         }
 
-        :root {
-            --primary: #2563eb;
-            --secondary: #3b82f6;
-            --accent: #10b981;
-            --light: #f8fafc;
-            --dark: #1e293b;
-            --danger: #ef4444;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        body {
-            background: #f1f5f9;
-        }
-
-        .dashboard-container {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            min-height: 100vh;
-            gap: 2rem;
-        }
-
-        /* ======= Sidebar ======= */
         .sidebar {
             background: white;
             padding: 2rem 1.5rem;
@@ -284,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background: #e0f2fe;
             color: var(--primary);
         }
-        
+
         @media (max-width: 768px) {
             .dashboard-container {
                 grid-template-columns: 1fr;
@@ -294,10 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 height: auto;
                 position: relative;
             }
-
         }
-
-        
     </style>
 </head>
 <body>
@@ -308,7 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <img src="hospital-logo.png" alt="CareCompass">
                 <h3>Patient Dashboard</h3>
             </div>
-            
             <nav>
                 <a href="./patient-dashboard.html" class="nav-item">
                     <i class="fas fa-home"></i>
@@ -348,7 +235,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="payment-details">
                             <p class="amount"><?= htmlspecialchars($payment['amount']) ?></p>
                             <span class="payment-status status-pending">Pending</span>
-                            <p class="due-date">Due: <?= date("Y-m-d", strtotime($payment['due_date'])) ?></p>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -357,23 +243,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <!-- Payment Form -->
             <div class="payment-form">
                 <h2 class="section-title">Make a Payment</h2>
-                <form id="payment-form" method="POST">
+                <form id="payment-form">
                     <div class="form-group">
-                        <label>Amount to Pay</label>
+                        <label>Amount to Pay (LKR)</label>
                         <input type="number" name="amount" value="150.00" required>
                     </div>
-
-                    <div class="form-group">
-                        <label>Payment Method</label>
-                        <div id="card-element">
-                            <!-- A Stripe Element will be inserted here. -->
-                        </div>
-                        <!-- Used to display form errors. -->
-                        <div id="card-errors" role="alert"></div>
-                    </div>
-
-                    <input type="hidden" name="appointment_id" value="12345"> <!-- Example appointment ID, replace dynamically -->
-                    <button type="submit" id="submit" class="btn btn-primary">Pay Now</button>
+                    <input type="hidden" name="appointment_id" value="12345"> <!-- Replace with dynamic value in production -->
+                    <button type="submit" class="btn btn-primary">Pay Now with PayHere</button>
                 </form>
             </div>
 
@@ -390,7 +266,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="payment-details">
                             <p class="amount"><?= htmlspecialchars($payment['amount']) ?></p>
                             <span class="payment-status status-paid">Paid</span>
-                            <p class="paid-date">Paid: <?= date("Y-m-d", strtotime($payment['paid_date'])) ?></p>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -398,52 +273,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </main>
     </div>
 
-    <script src="https://js.stripe.com/v3/"></script>
-<script>
-    var stripe = Stripe('pk_test_51OPJDzBo3hvX4AIQc7qVZ6w2Zb2aduI0C2UfSRFW7n2NMhQ42P7tj7xhA3TfIcQNKL8z4AnCc03SWHAxdww8PqWh00V3haSh5i'); // Replace with your public key
-    var elements = stripe.elements();
-    
-    // Create an instance of the card Element
-    var card = elements.create('card');
-    card.mount('#card-element'); // This mounts the card input field
+    <script type="text/javascript" src="https://www.payhere.lk/lib/payhere.js"></script>
+    <script>
+        document.getElementById('payment-form').addEventListener('submit', function(event) {
+            event.preventDefault();
 
-    // Handle form submission
-    var form = document.getElementById('payment-form');
-    form.addEventListener('submit', async function(event) {
-        event.preventDefault();
+            var amount = document.querySelector('input[name="amount"]').value;
+            var appointment_id = document.querySelector('input[name="appointment_id"]').value;
 
-        // Create a token using the card Element
-        const {token, error} = await stripe.createToken(card);
-
-        if (error) {
-            // Display any error that occurs during token creation
-            document.getElementById('card-errors').textContent = error.message;
-        } else {
-            // If no error, send the token to the backend for further processing
-            var formData = new FormData(form);
-            formData.append("payment_method_id", token.id);
-
-            // Send the token to the backend
-            fetch('patient-payment.php', {
+            fetch('initiate_payhere.php', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'amount=' + encodeURIComponent(amount) + '&appointment_id=' + encodeURIComponent(appointment_id)
             })
             .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error); // Display the error from the backend if any
-                } else {
-                    alert(data.message); // Display the success message received from backend
+            .then(payment => {
+                if (payment.error) {
+                    alert(payment.error);
+                    return;
                 }
+
+                payhere.onCompleted = function(orderId) {
+                    console.log("Payment completed. OrderID: " + orderId);
+                    alert("Payment completed. OrderID: " + orderId);
+                    window.location.reload();
+                };
+
+                payhere.onDismissed = function() {
+                    console.log("Payment dismissed");
+                    alert("Payment dismissed");
+                };
+
+                payhere.onError = function(error) {
+                    console.log("Error: " + error);
+                    alert("Error: " + error);
+                };
+
+                payhere.startPayment(payment);
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Payment failed. Please try again later.');
+                alert('Failed to initiate payment');
             });
-        }
-    });
-</script>
-
-
+        });
+    </script>
 </body>
 </html>
